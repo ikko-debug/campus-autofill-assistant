@@ -35,12 +35,27 @@
     return C.isVisible(element);
   }
 
+  function typeIntoSelect(control, value) {
+    if (!control || control.readOnly || control.disabled) return;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (setter) setter.call(control, value);
+    else control.value = value;
+    control.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }));
+  }
+
   function exactTextCandidate(value) {
     const wanted = C.normalize(value);
     const candidates = [...document.querySelectorAll(
       '[role="option"], .phoenix-select__option, [class*="phoenix-option"], li, [class*="option"], [class*="Option"]'
     )].filter(visible).filter((candidate) => C.normalize(candidate.textContent) === wanted);
-    return candidates[candidates.length - 1] || null;
+    if (candidates.length) return candidates[candidates.length - 1];
+    const fuzzy = [...document.querySelectorAll(
+      '[role="option"], .phoenix-select__option, [class*="phoenix-option"], li, [class*="option"], [class*="Option"]'
+    )].filter(visible).filter((candidate) => {
+      const text = C.normalize(candidate.textContent);
+      return text && (text.includes(wanted) || wanted.includes(text));
+    });
+    return fuzzy.length === 1 ? fuzzy[0] : null;
   }
 
   async function choose(label, value, report, options = {}) {
@@ -57,8 +72,10 @@
     }
     control.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     control.click();
-    await C.delay(220);
-    const option = exactTextCandidate(value);
+    await C.delay(120);
+    typeIntoSelect(control, value);
+    await C.delay(300);
+    const option = exactTextCandidate(value) || exactTextCandidate(value.replace(/^(\d{4})-(\d{2})$/, "$1年$2月"));
     if (!option) {
       report.missing.push(`${options.label || label}（未找到选项：${value}）`);
       return false;
@@ -174,7 +191,7 @@
       fillText("职位名称", record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      fillText("工作职责", record.description, report, { root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
+      fillText("工作职责", record.description || record.workDescription || record.desc, report, { root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
