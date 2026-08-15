@@ -1,0 +1,9 @@
+# Personal exports and locally filled profile data.
+campus-autofill-profile.json
+profile.json
+profile-*.json
+data/profile*.json
+data/*-profile.json
+
+# OS/editor metadata.
+.DS_Store
