@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "秋招本地填表助手",
+  "version": "0.1.0",
+  "description": "纯本地保存个人资料，辅助填写 Moka 与腾讯校招表单，不自动提交。",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://app.mokahr.com/*",
+    "https://join.qq.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "秋招本地填表助手",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://app.mokahr.com/*",
+        "https://join.qq.com/*"
+      ],
+      "js": [
+        "content/common.js",
+        "content/moka.js",
+        "content/tencent.js",
+        "content/index.js"
+      ],
+      "css": ["content/toast.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

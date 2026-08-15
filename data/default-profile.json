@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "personal": {
+    "name": "",
+    "gender": "",
+    "birthDate": "",
+    "phoneCountryCode": "+86",
+    "phone": "",
+    "email": "",
+    "wechat": "",
+    "qq": "",
+    "website": "",
+    "idType": "身份证",
+    "idNumber": "",
+    "currentLocation": "",
+    "photoNote": "照片与文件上传由本人手工完成"
+  },
+  "intent": {
+    "targetRole": "",
+    "desiredCities": [],
+    "interviewCity": "",
+    "acceptOtherCities": "",
+    "businessGroup": ""
+  },
+  "contacts": {
+    "emergencyName": "",
+    "emergencyPhone": "",
+    "referenceName": "",
+    "referenceRole": "",
+    "referencePhone": ""
+  },
+  "education": [],
+  "internships": [],
+  "projects": [],
+  "awards": [],
+  "skills": {
+    "programming": [],
+    "tools": [],
+    "summary": ""
+  },
+  "languages": [],
+  "additional": {
+    "aiTools": "",
+    "aiProject": "",
+    "portfolioLink": "",
+    "selfIntroduction": ""
+  },
+  "settings": {
+    "fillOnlyEmpty": true,
+    "allowCustomDropdowns": true
+  }
+}

@@ -1,0 +1,19 @@
+#campus-autofill-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2147483647;
+  max-width: 420px;
+  padding: 13px 17px;
+  border: 1px solid #c9d7ee;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #17233c;
+  box-shadow: 0 12px 36px rgba(16, 38, 76, 0.22);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: 160ms ease;
+}
+#campus-autofill-toast.visible { opacity: 1; transform: translateY(0); }
+#campus-autofill-toast[data-tone="success"] { border-color: #82c9a6; background: #f1fff7; }

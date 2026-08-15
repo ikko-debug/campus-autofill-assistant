@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>秋招本地填表助手</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body class="popup-body">
+  <main class="popup-card">
+    <p class="eyebrow">LOCAL ONLY</p>
+    <h1>秋招填表助手</h1>
+    <p id="site-status" class="muted">正在检查当前页面…</p>
+    <div id="page-summary" class="summary" hidden></div>
+    <label class="check-row">
+      <input id="overwrite" type="checkbox">
+      <span>覆盖网页已有内容</span>
+    </label>
+    <button id="fill" class="primary" disabled>填写当前页面</button>
+    <button id="open-options" class="secondary">编辑本地资料</button>
+    <p class="privacy">资料保存在 Chrome 本地；不会自动上传文件或提交简历。</p>
+    <div id="result" class="result" hidden></div>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

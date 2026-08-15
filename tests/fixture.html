@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Autofill fixture</title></head>
+<body>
+  <section id="basic">
+    <input placeholder="请输入姓名">
+    <input placeholder="请填写您的手机号码">
+    <textarea placeholder="请输入描述内容"></textarea>
+  </section>
+  <section class="info_list" id="internship">
+    <h2>实习经历-1</h2>
+    <input placeholder="请输入实习公司">
+    <input placeholder="请输入职位">
+    <input placeholder="选择日期">
+    <input placeholder="选择日期">
+    <label><input type="checkbox">至今</label>
+    <textarea placeholder="请输入描述内容"></textarea>
+  </section>
+  <script src="../content/common.js"></script>
+  <script src="../content/tencent.js"></script>
+  <pre id="test-result">pending</pre>
+  <script>
+    (async () => {
+      try {
+        const profile = {
+          personal: { name: "测试姓名", phone: "13800000000" },
+          intent: {}, contacts: {}, education: [], projects: [], awards: [], additional: {},
+          internships: [{
+            company: "测试公司", role: "测试职位", startDate: "2026-06-01",
+            endDate: "", current: true, description: "测试描述"
+          }],
+          settings: { allowCustomDropdowns: false }
+        };
+        const report = await CampusAutofillTencent.fill(profile, { overwrite: false });
+        const values = [...document.querySelectorAll("input[placeholder],textarea[placeholder]")]
+          .map((element) => [element.placeholder, element.value]);
+        document.getElementById("test-result").textContent = JSON.stringify({
+          report,
+          values,
+          checked: document.querySelector('#internship input[type="checkbox"]').checked
+        });
+      } catch (error) {
+        document.getElementById("test-result").textContent = `ERROR: ${error.stack || error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>
