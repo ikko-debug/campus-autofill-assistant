@@ -92,8 +92,8 @@
 
   function fillDate(label, value, report, options = {}) {
     if (!C.text(value)) return false;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      report.warnings.push(`${options.label || label} 只填写到月份，插件不会猜具体日期`);
+    if (!/^\d{4}-\d{2}(?:-\d{2})?$/.test(value)) {
+      report.warnings.push(`${options.label || label} 不是 YYYY-MM 或 YYYY-MM-DD，插件不会猜具体日期`);
       return false;
     }
     return choose(label, value, report, options);
@@ -125,9 +125,29 @@
     return [...document.querySelectorAll(".form-part-body")].filter((root) => item(label, root));
   }
 
+  async function ensureRecordCount(label, buttonText, wanted, report) {
+    if (!wanted) return recordRoots(label);
+    let roots = recordRoots(label);
+    while (roots.length < wanted) {
+      const button = [...document.querySelectorAll("button, a, div, span")]
+        .filter(visible)
+        .find((candidate) => C.normalize(candidate.textContent) === C.normalize(buttonText));
+      if (!button) {
+        report.missing.push(`${buttonText}（网页未找到添加按钮）`);
+        break;
+      }
+      button.click();
+      await C.delay(180);
+      const nextRoots = recordRoots(label);
+      if (nextRoots.length <= roots.length) break;
+      roots = nextRoots;
+    }
+    return roots;
+  }
+
   async function fillEducation(profile, report, options) {
     const records = profile.education || [];
-    const roots = recordRoots("毕业学校");
+    const roots = await ensureRecordCount("毕业学校", "添加教育经历", records.length, report);
     for (const [index, root] of roots.entries()) {
       const record = records[index];
       if (!record) continue;
@@ -143,9 +163,9 @@
     records.slice(roots.length).forEach((_record, index) => report.missing.push(`教育 ${roots.length + index + 1} 尚未在网页添加`));
   }
 
-  function fillInternships(profile, report, options) {
+  async function fillInternships(profile, report, options) {
     const records = profile.internships || [];
-    const roots = recordRoots("公司名称");
+    const roots = await ensureRecordCount("公司名称", "添加工作/实习经历", records.length, report);
     roots.forEach((root, index) => {
       const record = records[index];
       if (!record) return;
@@ -166,9 +186,9 @@
     records.slice(roots.length).forEach((_record, index) => report.missing.push(`实习 ${roots.length + index + 1} 尚未在网页添加`));
   }
 
-  function fillProjects(profile, report, options) {
+  async function fillProjects(profile, report, options) {
     const records = profile.projects || [];
-    const roots = recordRoots("项目名称");
+    const roots = await ensureRecordCount("项目名称", "添加项目经历", records.length, report);
     roots.forEach((root, index) => {
       const record = records[index];
       if (!record) return;
@@ -190,9 +210,9 @@
     records.slice(roots.length).forEach((_record, index) => report.missing.push(`项目 ${roots.length + index + 1} 尚未在网页添加`));
   }
 
-  function fillAwards(profile, report, options) {
+  async function fillAwards(profile, report, options) {
     const records = profile.awards || [];
-    const roots = recordRoots("获奖项");
+    const roots = await ensureRecordCount("获奖项", "添加获奖情况", records.length, report);
     roots.forEach((root, index) => {
       const record = records[index];
       if (!record) return;
@@ -240,9 +260,9 @@
     await choose("籍贯", p.nativePlace, report, { label: "籍贯", overwrite });
 
     await fillEducation(profile, report, { overwrite });
-    fillInternships(profile, report, { overwrite });
-    fillAwards(profile, report, { overwrite });
-    fillProjects(profile, report, { overwrite });
+    await fillInternships(profile, report, { overwrite });
+    await fillAwards(profile, report, { overwrite });
+    await fillProjects(profile, report, { overwrite });
     report.warnings.push("上传简历、地区级联、日期精确到日和最终提交仍保留手工确认。");
     return report;
   }
