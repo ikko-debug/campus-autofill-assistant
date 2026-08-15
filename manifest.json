@@ -7,7 +7,8 @@
   "host_permissions": [
     "https://app.mokahr.com/*",
     "https://join.qq.com/*",
-    "https://*.zhiye.com/*"
+    "https://*.zhiye.com/*",
+    "https://*.feishu.cn/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,13 +23,15 @@
       "matches": [
         "https://app.mokahr.com/*",
         "https://join.qq.com/*",
-        "https://*.zhiye.com/*"
+        "https://*.zhiye.com/*",
+        "https://*.feishu.cn/*"
       ],
       "js": [
         "content/common.js",
         "content/moka.js",
         "content/tencent.js",
         "content/zhiye.js",
+        "content/feishu.js",
         "content/index.js"
       ],
       "css": ["content/toast.css"],

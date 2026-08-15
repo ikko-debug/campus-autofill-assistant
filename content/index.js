@@ -6,6 +6,7 @@
     if (globalThis.CampusAutofillMoka?.detect()) return globalThis.CampusAutofillMoka;
     if (globalThis.CampusAutofillTencent?.detect()) return globalThis.CampusAutofillTencent;
     if (globalThis.CampusAutofillZhiye?.detect()) return globalThis.CampusAutofillZhiye;
+    if (globalThis.CampusAutofillFeishu?.detect()) return globalThis.CampusAutofillFeishu;
     return null;
   }
 
