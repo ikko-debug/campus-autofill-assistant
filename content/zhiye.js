@@ -107,6 +107,13 @@
     return result.ok;
   }
 
+  function recordValue(record, keys) {
+    for (const key of keys) {
+      if (C.text(record?.[key])) return record[key];
+    }
+    return "";
+  }
+
   function fillDate(label, value, report, options = {}) {
     if (!C.text(value)) return false;
     if (!/^\d{4}-\d{2}(?:-\d{2})?$/.test(value)) {
@@ -191,7 +198,7 @@
       fillText("职位名称", record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      fillText("工作职责", record.description || record.workDescription || record.desc, report, { root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
+      fillText("工作职责", recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
@@ -214,8 +221,8 @@
       fillText("职务", record.role, report, { root, label: `${prefix} 职务`, overwrite: options.overwrite });
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      fillText("项目成果", record.description, report, { root, label: `${prefix} 项目成果`, overwrite: options.overwrite });
-      fillText("项目描述", record.description, report, { root, label: `${prefix} 项目描述`, overwrite: options.overwrite });
+      fillText("项目成果", recordValue(record, ["achievement", "achievements", "result", "results", "outcome", "成果"]), report, { root, label: `${prefix} 项目成果`, overwrite: options.overwrite });
+      fillText("项目描述", recordValue(record, ["description", "projectDescription", "desc"]), report, { root, label: `${prefix} 项目描述`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {

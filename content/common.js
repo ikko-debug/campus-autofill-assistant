@@ -29,8 +29,15 @@
     const setter = nativeSetter(element);
     if (setter) setter.call(element, next);
     else element.value = next;
-    element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: next }));
+    // Phoenix/React textareas listen to the bubbling input event; use a plain
+    // Event as a fallback because some browsers reject very long InputEvent data.
+    try {
+      element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: next }));
+    } catch (_error) {
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     element.dispatchEvent(new Event("change", { bubbles: true }));
+    element.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true, key: "End" }));
     element.dispatchEvent(new Event("blur", { bubbles: true }));
     return { ok: true };
   }

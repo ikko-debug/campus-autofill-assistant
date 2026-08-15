@@ -14,7 +14,7 @@ const recordSchemas = {
   ],
   projects: [
     ["name", "项目名称"], ["role", "项目角色"], ["startDate", "开始时间"],
-    ["endDate", "结束时间"], ["current", "至今", "checkbox"], ["description", "项目描述", "textarea"]
+    ["endDate", "结束时间"], ["current", "至今", "checkbox"], ["achievement", "项目成果", "textarea"], ["description", "项目描述", "textarea"]
   ],
   awards: [["type", "获奖类型"], ["name", "奖项名称"], ["year", "年份"], ["description", "说明"]]
 };
