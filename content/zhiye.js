@@ -190,6 +190,7 @@
   async function fillInternships(profile, report, options) {
     const records = profile.internships || [];
     const roots = await ensureRecordCount("公司名称", "添加工作/实习经历", records.length, report);
+    const dutyRoots = recordRoots("工作职责");
     roots.forEach((root, index) => {
       const record = records[index];
       if (!record) return;
@@ -198,7 +199,7 @@
       fillText("职位名称", record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      fillText("工作职责", recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
+      fillText("工作职责", recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root: dutyRoots[index] || root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
@@ -213,6 +214,7 @@
   async function fillProjects(profile, report, options) {
     const records = profile.projects || [];
     const roots = await ensureRecordCount("项目名称", "添加项目经历", records.length, report);
+    const descriptionRoots = recordRoots("项目描述");
     roots.forEach((root, index) => {
       const record = records[index];
       if (!record) return;
@@ -222,7 +224,7 @@
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
       fillText("项目成果", recordValue(record, ["achievement", "achievements", "result", "results", "outcome", "成果"]), report, { root, label: `${prefix} 项目成果`, overwrite: options.overwrite });
-      fillText("项目描述", recordValue(record, ["description", "projectDescription", "desc"]), report, { root, label: `${prefix} 项目描述`, overwrite: options.overwrite });
+      fillText("项目描述", recordValue(record, ["description", "projectDescription", "desc"]), report, { root: descriptionRoots[index] || root, label: `${prefix} 项目描述`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
