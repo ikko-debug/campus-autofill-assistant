@@ -6,7 +6,8 @@
   "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://app.mokahr.com/*",
-    "https://join.qq.com/*"
+    "https://join.qq.com/*",
+    "https://*.zhiye.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -20,12 +21,14 @@
     {
       "matches": [
         "https://app.mokahr.com/*",
-        "https://join.qq.com/*"
+        "https://join.qq.com/*",
+        "https://*.zhiye.com/*"
       ],
       "js": [
         "content/common.js",
         "content/moka.js",
         "content/tencent.js",
+        "content/zhiye.js",
         "content/index.js"
       ],
       "css": ["content/toast.css"],

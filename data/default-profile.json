@@ -4,6 +4,10 @@
     "name": "",
     "gender": "",
     "birthDate": "",
+    "nation": "",
+    "maritalStatus": "",
+    "health": "",
+    "nativePlace": "",
     "phoneCountryCode": "+86",
     "phone": "",
     "email": "",
@@ -19,6 +23,7 @@
     "targetRole": "",
     "desiredCities": [],
     "interviewCity": "",
+    "expectedSalary": "",
     "acceptOtherCities": "",
     "businessGroup": ""
   },
@@ -43,6 +48,8 @@
     "aiTools": "",
     "aiProject": "",
     "portfolioLink": "",
+    "hobbies": "",
+    "patents": "",
     "selfIntroduction": ""
   },
   "settings": {

@@ -5,6 +5,7 @@
   function adapter() {
     if (globalThis.CampusAutofillMoka?.detect()) return globalThis.CampusAutofillMoka;
     if (globalThis.CampusAutofillTencent?.detect()) return globalThis.CampusAutofillTencent;
+    if (globalThis.CampusAutofillZhiye?.detect()) return globalThis.CampusAutofillZhiye;
     return null;
   }
 
