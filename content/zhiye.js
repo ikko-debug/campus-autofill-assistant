@@ -132,14 +132,27 @@
 
   function fillTextAny(labels, value, report, options = {}) {
     if (!C.text(value)) return false;
-    const control = textControlAny(labels, options.root);
+    let control = textControlAny(labels, options.root);
     const displayLabel = options.label || (Array.isArray(labels) ? labels[0] : labels);
+    let fallback = false;
+    if (!control && options.root) {
+      const candidates = [...options.root.querySelectorAll(
+        'input.phoenix-input__input:not([type="file"]), textarea.phoenix-textarea__realTextarea, input:not([type="file"]), textarea'
+      )].filter((element) => visible(element) && !element.disabled);
+      if (candidates.length === 1) {
+        control = candidates[0];
+        fallback = true;
+      }
+    }
     if (!control) {
       report.missing.push(displayLabel);
       return false;
     }
     const result = C.setValue(control, value, options.overwrite);
-    if (result.ok) report.filled.push(displayLabel);
+    if (result.ok) {
+      report.filled.push(displayLabel);
+      if (fallback) report.warnings.push(`${displayLabel}：页面标签未匹配，已尝试填写区块内唯一文本框`);
+    }
     else report.skipped.push(`${displayLabel}：${result.reason}`);
     return result.ok;
   }
