@@ -4,7 +4,7 @@
 
   function detect() {
     return location.hostname.endsWith(".zhiye.com") || location.hostname === "zhiye.com" ||
-      location.hostname === "campus.hundsun.com";
+      location.hostname === "campus.hundsun.com" || location.hostname === "we.zyt.com";
   }
 
   function labelOf(item) {
@@ -245,7 +245,7 @@
 
   async function fillInternships(profile, report, options) {
     const records = profile.internships || [];
-    const roots = await ensureRecordCount(["公司名称", "单位名称"], ["添加工作/实习经历", "添加实习经历"], records.length, report);
+    const roots = await ensureRecordCount(["公司名称", "单位名称"], ["添加工作/实习经历", "添加实习经历", "添加工作经历"], records.length, report);
     const dutyRoots = recordRootsAny(["工作职责", "实习内容"]);
     roots.forEach((root, index) => {
       const record = records[index];
