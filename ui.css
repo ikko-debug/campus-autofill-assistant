@@ -16,6 +16,10 @@ h1, h2, p { margin-top: 0; }
 .popup-card h1 { margin-bottom: 8px; font-size: 25px; }
 .summary, .result { margin: 16px 0; padding: 12px; border: 1px solid #dce5f3; border-radius: 10px; background: rgba(255,255,255,.8); color: #526079; font-size: 13px; line-height: 1.55; }
 .result { display: grid; gap: 4px; color: #25344f; }
+.result details { margin-top: 5px; border-top: 1px solid #e1e8f2; padding-top: 7px; }
+.result summary { cursor: pointer; color: #29466f; font-weight: 700; }
+.result ul { margin: 7px 0 0; padding-left: 20px; max-height: 120px; overflow: auto; }
+.result li + li { margin-top: 4px; }
 .privacy { margin: 14px 0 0; color: #7d899c; font-size: 12px; line-height: 1.5; }
 .primary, .secondary, .small, .file-button { border-radius: 9px; padding: 10px 14px; border: 1px solid transparent; font-weight: 700; }
 .primary { background: #245dba; color: white; }
@@ -46,6 +50,7 @@ textarea { min-height: 104px; resize: vertical; line-height: 1.55; }
 .record-title { margin-bottom: 14px; color: #2b4164; }
 .danger-link { border: 0; background: transparent; color: #b54747; }
 .save-status { position: fixed; right: 24px; bottom: 24px; padding: 10px 14px; border-radius: 8px; background: #173867; color: white; box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+.save-status[data-tone="error"] { background: #9f2f2f; }
 .save-status:empty { display: none; }
 @media (max-width: 760px) {
   .options-header { flex-direction: column; }

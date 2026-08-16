@@ -40,8 +40,10 @@
         <label>手机国家代码<input data-path="personal.phoneCountryCode"></label>
         <label>当前所在地<input data-path="personal.currentLocation" placeholder="如：中国大陆 / 四川省 / 成都市"></label>
         <label>个人主页<input data-path="personal.website"></label>
+        <label>目标岗位<input data-path="intent.targetRole"></label>
         <label>期望城市（逗号分隔）<input data-path="intent.desiredCities" data-array="true"></label>
         <label>面试城市<input data-path="intent.interviewCity"></label>
+        <label>是否接受其他城市<input data-path="intent.acceptOtherCities" placeholder="如：是 / 否"></label>
         <label>紧急联系人<input data-path="contacts.emergencyName"></label>
         <label>紧急联系人电话<input data-path="contacts.emergencyPhone"></label>
         <label>资料证明人<input data-path="contacts.referenceName"></label>
@@ -68,12 +70,20 @@
       <div class="section-heading"><h2>获奖信息</h2><button data-add="awards" class="small">添加</button></div>
       <div id="awards-list" class="record-list"></div>
     </section>
+    <section class="panel">
+      <div class="section-heading"><h2>语言能力</h2><button data-add="languages" class="small">添加</button></div>
+      <div id="languages-list" class="record-list"></div>
+    </section>
 
     <section class="panel">
       <h2>其他信息</h2>
       <div class="form-grid one-column">
+        <label>编程语言（逗号分隔）<input data-path="skills.programming" data-array="true"></label>
+        <label>工具与框架（逗号分隔）<input data-path="skills.tools" data-array="true"></label>
+        <label>技能概述<textarea data-path="skills.summary"></textarea></label>
         <label>常用 AI 工具<textarea data-path="additional.aiTools"></textarea></label>
         <label>AI 协作项目说明<textarea data-path="additional.aiProject"></textarea></label>
+        <label>项目 / 作品链接<input data-path="additional.portfolioLink"></label>
         <label>自我介绍 / 补充信息<textarea data-path="additional.selfIntroduction"></textarea></label>
         <label>兴趣爱好<textarea data-path="additional.hobbies"></textarea></label>
         <label>专利成果<textarea data-path="additional.patents"></textarea></label>
@@ -83,6 +93,7 @@
     </section>
     <div id="save-status" class="save-status" aria-live="polite"></div>
   </main>
+  <script src="profile.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

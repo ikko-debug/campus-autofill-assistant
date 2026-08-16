@@ -82,8 +82,8 @@
       report.missing.push(options.label || label);
       return false;
     }
-    const current = C.normalize(control.closest(".phoenix-select")?.textContent || "");
-    if (!options.overwrite && current && current !== "请选择" && current.includes(C.normalize(value))) {
+    const current = control.value || control.closest(".phoenix-select")?.textContent || "";
+    if (!options.overwrite && C.hasMeaningfulSelection(current)) {
       report.skipped.push(`${options.label || label}：网页已有内容`);
       return true;
     }
@@ -187,7 +187,8 @@
       report.missing.push(`${options.label || label}（未找到选项：${value}）`);
       return false;
     }
-    if (!options.overwrite && choice.classList.contains("phoenix-radio--checked")) {
+    const selected = current.querySelector('.phoenix-radio--checked, [role="radio"][aria-checked="true"], input[type="radio"]:checked');
+    if (!options.overwrite && selected) {
       report.skipped.push(`${options.label || label}：网页已有内容`);
       return true;
     }
@@ -204,15 +205,31 @@
     return [...document.querySelectorAll(".form-part-body")].filter((root) => itemAny(labels, root));
   }
 
+  function findAddButton(buttonTexts) {
+    const wanted = buttonTexts.map(C.normalize);
+    return [...document.querySelectorAll('button:not([disabled]), a[href], a[role="button"], [role="button"]')]
+      .filter(visible)
+      .find((candidate) => wanted.includes(C.normalize(candidate.textContent)));
+  }
+
+  function setCurrent(root, current, report, label, overwrite) {
+    const checkbox = root.querySelector('input[type="checkbox"]');
+    if (!checkbox || checkbox.checked === Boolean(current)) return;
+    if (!overwrite && checkbox.checked) {
+      report.skipped.push(`${label}：网页已有内容`);
+      return;
+    }
+    (checkbox.closest("label, .phoenix-checkbox, .phoenix-checkbox__box") || checkbox).click();
+    report.filled.push(label);
+  }
+
   async function ensureRecordCount(label, buttonText, wanted, report) {
     const labels = Array.isArray(label) ? label : [label];
     const buttons = Array.isArray(buttonText) ? buttonText : [buttonText];
     if (!wanted) return recordRootsAny(labels);
     let roots = recordRootsAny(labels);
     while (roots.length < wanted) {
-      const button = [...document.querySelectorAll("button, a, div, span")]
-        .filter(visible)
-        .find((candidate) => buttons.some((text) => C.normalize(candidate.textContent) === C.normalize(text)));
+      const button = findAddButton(buttons);
       if (!button) {
         report.missing.push(`${buttons[0]}（网页未找到添加按钮）`);
         break;
@@ -220,7 +237,10 @@
       button.click();
       await C.delay(180);
       const nextRoots = recordRootsAny(labels);
-      if (nextRoots.length <= roots.length) break;
+      if (nextRoots.length <= roots.length) {
+        report.warnings.push(`${buttons[0]}：点击后未检测到新经历区块，已停止自动添加`);
+        break;
+      }
       roots = nextRoots;
     }
     return roots;
@@ -233,13 +253,17 @@
       const record = records[index];
       if (!record) continue;
       const prefix = `教育 ${index + 1}`;
-      fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
-      fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      await chooseOneOf(["学历"], record.degree, report, { root, label: `${prefix} 学历`, overwrite: options.overwrite });
+      if (options.allowCustomDropdowns) {
+        fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
+        fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
+        await chooseOneOf(["学历"], record.degree, report, { root, label: `${prefix} 学历`, overwrite: options.overwrite });
+      }
       fillTextAny(["毕业学校", "学校名称"], record.school, report, { root, label: `${prefix} 学校`, overwrite: options.overwrite });
       fillTextAny(["专业", "专业名称"], record.major, report, { root, label: `${prefix} 专业`, overwrite: options.overwrite });
       const degree = C.normalize(record.degree) === "硕士研究生" ? "硕士" : record.degree;
-      await choose("学位", degree, report, { root, label: `${prefix} 学位`, overwrite: options.overwrite });
+      if (options.allowCustomDropdowns) {
+        await choose("学位", degree, report, { root, label: `${prefix} 学位`, overwrite: options.overwrite });
+      }
     }
     records.slice(roots.length).forEach((_record, index) => report.missing.push(`教育 ${roots.length + index + 1} 尚未在网页添加`));
   }
@@ -259,17 +283,13 @@
       const prefix = `实习 ${index + 1}`;
       fillTextAny(["公司名称", "单位名称"], record.company, report, { root, label: `${prefix} 公司`, overwrite: options.overwrite });
       fillTextAny(["职位名称", "职位", "职务"], record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
-      fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
-      fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
+      if (options.allowCustomDropdowns) {
+        fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
+        fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
+      }
       const descriptionRoot = itemAny(["工作职责", "实习内容"], root) ? root : dutyRoots[roots.indexOf(root)] || root;
       fillTextAny(["工作职责", "实习内容"], recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root: descriptionRoot, label: `${prefix} 工作职责`, overwrite: options.overwrite });
-      if (record.current) {
-        const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
-        if (checkbox && !checkbox.checked) {
-          (checkbox.closest("label, .phoenix-checkbox, .phoenix-checkbox__box") || checkbox).click();
-          report.filled.push(`${prefix} 至今`);
-        }
-      }
+      setCurrent(root, record.current, report, `${prefix} 至今`, options.overwrite);
     });
     matched.unmatchedRecordIndexes.forEach((index) => report.missing.push(`实习 ${index + 1} 尚未在网页添加或无法按公司匹配`));
   }
@@ -289,18 +309,14 @@
       const prefix = `项目 ${index + 1}`;
       fillText("项目名称", record.name, report, { root, label: `${prefix} 名称`, overwrite: options.overwrite });
       fillText("职务", record.role, report, { root, label: `${prefix} 职务`, overwrite: options.overwrite });
-      fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
-      fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
+      if (options.allowCustomDropdowns) {
+        fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
+        fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
+      }
       fillText("项目成果", recordValue(record, ["achievement", "achievements", "result", "results", "outcome", "成果"]), report, { root, label: `${prefix} 项目成果`, overwrite: options.overwrite });
       const descriptionRoot = item("项目描述", root) ? root : descriptionRoots[roots.indexOf(root)] || root;
       fillText("项目描述", recordValue(record, ["description", "projectDescription", "desc"]), report, { root: descriptionRoot, label: `${prefix} 项目描述`, overwrite: options.overwrite });
-      if (record.current) {
-        const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
-        if (checkbox && !checkbox.checked) {
-          (checkbox.closest("label, .phoenix-checkbox, .phoenix-checkbox__box") || checkbox).click();
-          report.filled.push(`${prefix} 至今`);
-        }
-      }
+      setCurrent(root, record.current, report, `${prefix} 至今`, options.overwrite);
     });
     matched.unmatchedRecordIndexes.forEach((index) => report.missing.push(`项目 ${index + 1} 尚未在网页添加或无法按名称匹配`));
   }
@@ -313,7 +329,9 @@
       if (!record) return;
       const prefix = `获奖 ${index + 1}`;
       fillText("获奖项", record.name, report, { root, label: `${prefix} 名称`, overwrite: options.overwrite });
-      fillDate("获奖时间", record.year, report, { root, label: `${prefix} 时间`, overwrite: options.overwrite });
+      if (options.allowCustomDropdowns) {
+        fillDate("获奖时间", record.year, report, { root, label: `${prefix} 时间`, overwrite: options.overwrite });
+      }
       fillText("获奖描述", record.description, report, { root, label: `${prefix} 描述`, overwrite: options.overwrite });
     });
     records.slice(roots.length).forEach((_record, index) => report.missing.push(`获奖 ${roots.length + index + 1} 尚未在网页添加`));
@@ -334,6 +352,7 @@
     const intent = profile.intent || {};
     const contacts = profile.contacts || {};
     const overwrite = Boolean(options.overwrite);
+    const allowCustomDropdowns = profile.settings?.allowCustomDropdowns !== false;
 
     fillText("姓名", p.name, report, { label: "姓名", overwrite });
     fillRadio("性别", p.gender, report, { label: "性别", overwrite });
@@ -346,18 +365,22 @@
     fillText("兴趣爱好", profile.additional?.hobbies, report, { label: "兴趣爱好", overwrite });
     fillText("专利成果", profile.additional?.patents, report, { label: "专利成果", overwrite });
 
-    await choose("意向工作地点", intent.desiredCities?.[0], report, { label: "意向工作地点", overwrite });
-    fillDate("出生日期", p.birthDate, report, { label: "出生日期", overwrite });
-    await choose("民族", p.nation, report, { label: "民族", overwrite });
+    if (allowCustomDropdowns) {
+      await choose("意向工作地点", intent.desiredCities?.[0], report, { label: "意向工作地点", overwrite });
+      fillDate("出生日期", p.birthDate, report, { label: "出生日期", overwrite });
+      await choose("民族", p.nation, report, { label: "民族", overwrite });
+      await choose("最高学历", profile.education?.[0]?.degree, report, { label: "最高学历", overwrite });
+      await choose("外语水平", profile.languages?.[0]?.certificate, report, { label: "外语水平", overwrite });
+      await choose("籍贯", p.nativePlace, report, { label: "籍贯", overwrite });
+    } else {
+      report.warnings.push("已按设置跳过北森自定义下拉框和日期选择器。");
+    }
     await fillRadio("婚否", p.maritalStatus, report, { label: "婚否", overwrite });
-    await choose("最高学历", profile.education?.[0]?.degree, report, { label: "最高学历", overwrite });
-    await choose("外语水平", profile.languages?.[0]?.certificate, report, { label: "外语水平", overwrite });
-    await choose("籍贯", p.nativePlace, report, { label: "籍贯", overwrite });
 
-    await fillEducation(profile, report, { overwrite });
-    await fillInternships(profile, report, { overwrite });
-    await fillAwards(profile, report, { overwrite });
-    await fillProjects(profile, report, { overwrite });
+    await fillEducation(profile, report, { overwrite, allowCustomDropdowns });
+    await fillInternships(profile, report, { overwrite, allowCustomDropdowns });
+    await fillAwards(profile, report, { overwrite, allowCustomDropdowns });
+    await fillProjects(profile, report, { overwrite, allowCustomDropdowns });
     report.warnings.push("上传简历、地区级联、日期精确到日和最终提交仍保留手工确认。");
     return report;
   }

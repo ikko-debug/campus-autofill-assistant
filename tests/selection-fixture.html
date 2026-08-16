@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Selection overwrite fixture</title></head>
+<body>
+  <div class="el-select" id="generic-select"><input placeholder="请选择"><span>已有选项</span></div>
+
+  <div class="atsx-input"></div>
+  <div role="combobox" id="feishu-combobox"><span>本科</span><input id="education[1].degree"></div>
+
+  <div class="form-item form-item--phoenix" id="gender-item">
+    <span class="form-item__text">性别</span>
+    <label class="phoenix-radio phoenix-radio--checked">男</label>
+    <label class="phoenix-radio" id="female-choice">女</label>
+  </div>
+
+  <script src="../content/common.js"></script>
+  <script src="../content/feishu.js"></script>
+  <script src="../content/zhiye.js"></script>
+  <pre id="test-result">pending</pre>
+  <script>
+    (async () => {
+      let genericClicks = 0;
+      let radioClicks = 0;
+      document.getElementById("generic-select").addEventListener("click", () => { genericClicks += 1; });
+      document.getElementById("female-choice").addEventListener("click", () => { radioClicks += 1; });
+
+      const genericReport = CampusAutofill.createReport("通用选择");
+      await CampusAutofill.chooseFromInput(
+        document.querySelector("#generic-select input"), "目标选项", genericReport, "通用下拉", { overwrite: false }
+      );
+      const feishuReport = await CampusAutofillFeishu.fill({
+        personal: {}, education: [{ degree: "硕士研究生" }], internships: [], projects: []
+      }, { overwrite: false });
+      const zhiyeReport = await CampusAutofillZhiye.fill({
+        personal: { gender: "女" }, intent: {}, contacts: {}, education: [], internships: [], projects: [], awards: [], languages: [], additional: {}
+      }, { overwrite: false });
+
+      const pass = genericClicks === 0
+        && radioClicks === 0
+        && genericReport.skipped.some((item) => item.includes("网页已有内容"))
+        && feishuReport.skipped.some((item) => item.includes("教育经历 学历"))
+        && zhiyeReport.skipped.some((item) => item.includes("性别"));
+      document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ genericClicks, radioClicks, genericReport, feishuReport, zhiyeReport })}`;
+    })();
+  </script>
+</body>
+</html>

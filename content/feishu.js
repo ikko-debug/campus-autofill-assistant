@@ -48,7 +48,7 @@
       return false;
     }
     const current = C.normalize(container.textContent || "");
-    if (!overwrite && current && !current.includes("请选择") && !current.includes("请输入") && current.includes(C.normalize(value))) {
+    if (!overwrite && C.hasMeaningfulSelection(current)) {
       report.skipped.push(`${label}：网页已有内容`);
       return true;
     }
@@ -159,7 +159,11 @@
     fillSelector('[data-test="nameInput"]', p.name, report, "姓名", overwrite);
     fillSelector('[data-test="emailInput"]', p.email, report, "邮箱", overwrite);
     fillSelector("#id", p.idNumber, report, "身份证号", overwrite);
-    await choose('[id="education[1].degree"]', profile.education?.[0]?.degree === "硕士研究生" ? "硕士" : profile.education?.[0]?.degree, report, "教育经历 学历", overwrite);
+    if (profile.settings?.allowCustomDropdowns !== false) {
+      await choose('[id="education[1].degree"]', profile.education?.[0]?.degree === "硕士研究生" ? "硕士" : profile.education?.[0]?.degree, report, "教育经历 学历", overwrite);
+    } else {
+      report.warnings.push("已按设置跳过飞书自定义下拉框。");
+    }
     fillEducation(profile, report, overwrite);
     fillCareer(profile, report, overwrite);
     fillProjects(profile, report, overwrite);
