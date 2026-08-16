@@ -3,7 +3,8 @@
   const C = globalThis.CampusAutofill;
 
   function detect() {
-    return location.hostname === "feishu.cn" || location.hostname.endsWith(".feishu.cn");
+    const atsx = document.querySelector('.atsx-input, .atsx-select-selection, [data-test="nameInput"]');
+    return Boolean(atsx && !document.querySelector(".form-item--phoenix"));
   }
 
   function one(selector, root = document) {

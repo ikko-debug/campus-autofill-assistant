@@ -3,8 +3,9 @@
   const C = globalThis.CampusAutofill;
 
   function detect() {
-    return location.hostname.endsWith(".zhiye.com") || location.hostname === "zhiye.com" ||
-      location.hostname === "campus.hundsun.com" || location.hostname === "we.zyt.com";
+    const phoenix = document.querySelector(".form-item--phoenix, .phoenix-input, .phoenix-select, .phoenix-textarea");
+    const beisenMark = /powered by beisen|北森/i.test(document.body?.innerText || "");
+    return Boolean(phoenix && (beisenMark || document.querySelector(".formStyleLeftAndRight, .twoLineFormStyleLong")));
   }
 
   function labelOf(item) {

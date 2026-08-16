@@ -23,12 +23,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://app.mokahr.com/*",
-        "https://join.qq.com/*",
-        "https://*.zhiye.com/*",
-        "https://*.feishu.cn/*",
-        "https://campus.hundsun.com/*",
-        "https://we.zyt.com/*"
+        "https://*/*"
       ],
       "js": [
         "content/common.js",
