@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Feishu experience fixture</title></head>
+<body>
+  <div class="atsx-input"></div>
+  <input id="career[1].company" value="乙公司">
+  <input id="career[1].title">
+  <textarea id="career[1].desc"></textarea>
+  <input id="career[2].company">
+  <input id="career[2].title">
+  <textarea id="career[2].desc"></textarea>
+  <input id="project[1].name" value="项目乙">
+  <input id="project[1].role">
+  <textarea id="project[1].desc"></textarea>
+  <input id="project[2].name">
+  <input id="project[2].role">
+  <textarea id="project[2].desc"></textarea>
+  <script src="../content/common.js"></script>
+  <script src="../content/feishu.js"></script>
+  <pre id="test-result">pending</pre>
+  <script>
+    (async () => {
+      const profile = {
+        personal: {}, education: [], additional: {},
+        internships: [
+          { company: "甲公司", role: "甲职位", description: "甲职责" },
+          { company: "乙公司", role: "乙职位", description: "乙职责" }
+        ],
+        projects: [
+          { name: "项目甲", role: "甲角色", description: "甲描述" },
+          { name: "项目乙", role: "乙角色", description: "乙描述" }
+        ]
+      };
+      const report = await CampusAutofillFeishu.fill(profile, { overwrite: false });
+      const ids = [
+        "career[1].company", "career[1].title", "career[1].desc",
+        "career[2].company", "career[2].title", "career[2].desc",
+        "project[1].name", "project[1].role", "project[1].desc",
+        "project[2].name", "project[2].role", "project[2].desc"
+      ];
+      const actual = ids.map((id) => document.getElementById(id).value);
+      const expected = [
+        "乙公司", "乙职位", "乙职责", "甲公司", "甲职位", "甲职责",
+        "项目乙", "乙角色", "乙描述", "项目甲", "甲角色", "甲描述"
+      ];
+      document.getElementById("test-result").textContent = JSON.stringify(actual) === JSON.stringify(expected)
+        ? `PASS ${JSON.stringify(report)}`
+        : `FAIL ${JSON.stringify({ actual, expected, report })}`;
+    })();
+  </script>
+</body>
+</html>

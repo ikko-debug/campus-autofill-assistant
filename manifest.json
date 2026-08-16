@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "秋招本地填表助手",
-  "version": "0.1.0",
-  "description": "纯本地保存个人资料，辅助填写 Moka、腾讯、北森与飞书校招表单，不自动提交。",
+  "version": "0.2.0",
+  "description": "纯本地保存个人资料，辅助填写常见招聘表单，并匹配实习、工作与项目经历，不自动提交。",
   "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://app.mokahr.com/*",
@@ -31,6 +31,7 @@
         "content/tencent.js",
         "content/zhiye.js",
         "content/feishu.js",
+        "content/generic.js",
         "content/index.js"
       ],
       "css": ["content/toast.css"],

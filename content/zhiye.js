@@ -247,16 +247,22 @@
   async function fillInternships(profile, report, options) {
     const records = profile.internships || [];
     const roots = await ensureRecordCount(["公司名称", "单位名称"], ["添加工作/实习经历", "添加实习经历", "添加工作经历"], records.length, report);
+    const matched = C.matchRecordsToRoots(
+      records,
+      roots,
+      (root) => textControlAny(["公司名称", "单位名称"], root)?.value,
+      (record) => record.company
+    );
     const dutyRoots = recordRootsAny(["工作职责", "实习内容"]);
-    roots.forEach((root, index) => {
-      const record = records[index];
+    matched.matches.forEach(({ root, record, recordIndex: index }) => {
       if (!record) return;
       const prefix = `实习 ${index + 1}`;
       fillTextAny(["公司名称", "单位名称"], record.company, report, { root, label: `${prefix} 公司`, overwrite: options.overwrite });
       fillTextAny(["职位名称", "职位", "职务"], record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      fillTextAny(["工作职责", "实习内容"], recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root: dutyRoots[index] || root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
+      const descriptionRoot = itemAny(["工作职责", "实习内容"], root) ? root : dutyRoots[roots.indexOf(root)] || root;
+      fillTextAny(["工作职责", "实习内容"], recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root: descriptionRoot, label: `${prefix} 工作职责`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
@@ -265,15 +271,20 @@
         }
       }
     });
-    records.slice(roots.length).forEach((_record, index) => report.missing.push(`实习 ${roots.length + index + 1} 尚未在网页添加`));
+    matched.unmatchedRecordIndexes.forEach((index) => report.missing.push(`实习 ${index + 1} 尚未在网页添加或无法按公司匹配`));
   }
 
   async function fillProjects(profile, report, options) {
     const records = profile.projects || [];
     const roots = await ensureRecordCount("项目名称", "添加项目经历", records.length, report);
+    const matched = C.matchRecordsToRoots(
+      records,
+      roots,
+      (root) => textControl("项目名称", root)?.value,
+      (record) => record.name
+    );
     const descriptionRoots = recordRoots("项目描述");
-    roots.forEach((root, index) => {
-      const record = records[index];
+    matched.matches.forEach(({ root, record, recordIndex: index }) => {
       if (!record) return;
       const prefix = `项目 ${index + 1}`;
       fillText("项目名称", record.name, report, { root, label: `${prefix} 名称`, overwrite: options.overwrite });
@@ -281,7 +292,8 @@
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
       fillText("项目成果", recordValue(record, ["achievement", "achievements", "result", "results", "outcome", "成果"]), report, { root, label: `${prefix} 项目成果`, overwrite: options.overwrite });
-      fillText("项目描述", recordValue(record, ["description", "projectDescription", "desc"]), report, { root: descriptionRoots[index] || root, label: `${prefix} 项目描述`, overwrite: options.overwrite });
+      const descriptionRoot = item("项目描述", root) ? root : descriptionRoots[roots.indexOf(root)] || root;
+      fillText("项目描述", recordValue(record, ["description", "projectDescription", "desc"]), report, { root: descriptionRoot, label: `${prefix} 项目描述`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
@@ -290,7 +302,7 @@
         }
       }
     });
-    records.slice(roots.length).forEach((_record, index) => report.missing.push(`项目 ${roots.length + index + 1} 尚未在网页添加`));
+    matched.unmatchedRecordIndexes.forEach((index) => report.missing.push(`项目 ${index + 1} 尚未在网页添加或无法按名称匹配`));
   }
 
   async function fillAwards(profile, report, options) {

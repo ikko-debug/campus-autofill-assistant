@@ -7,8 +7,17 @@
     <input placeholder="请填写您的手机号码">
     <textarea placeholder="请输入描述内容"></textarea>
   </section>
-  <section class="info_list" id="internship">
+  <section class="info_list" id="internship-b">
     <h2>实习经历-1</h2>
+    <input placeholder="请输入实习公司" value="乙公司">
+    <input placeholder="请输入职位">
+    <input placeholder="选择日期">
+    <input placeholder="选择日期">
+    <label><input type="checkbox">至今</label>
+    <textarea placeholder="请输入描述内容"></textarea>
+  </section>
+  <section class="info_list" id="internship-a">
+    <h2>实习经历-2</h2>
     <input placeholder="请输入实习公司">
     <input placeholder="请输入职位">
     <input placeholder="选择日期">
@@ -25,20 +34,25 @@
         const profile = {
           personal: { name: "测试姓名", phone: "13800000000" },
           intent: {}, contacts: {}, education: [], projects: [], awards: [], additional: {},
-          internships: [{
-            company: "测试公司", role: "测试职位", startDate: "2026-06-01",
-            endDate: "", current: true, description: "测试描述"
-          }],
+          internships: [
+            { company: "甲公司", role: "甲职位", startDate: "2026-06-01", endDate: "", current: true, description: "甲描述" },
+            { company: "乙公司", role: "乙职位", startDate: "2025-06-01", endDate: "2025-09-01", current: false, description: "乙描述" }
+          ],
           settings: { allowCustomDropdowns: false }
         };
         const report = await CampusAutofillTencent.fill(profile, { overwrite: false });
         const values = [...document.querySelectorAll("input[placeholder],textarea[placeholder]")]
           .map((element) => [element.placeholder, element.value]);
-        document.getElementById("test-result").textContent = JSON.stringify({
-          report,
+        const actual = {
           values,
-          checked: document.querySelector('#internship input[type="checkbox"]').checked
-        });
+          firstChecked: document.querySelector('#internship-b input[type="checkbox"]').checked,
+          secondChecked: document.querySelector('#internship-a input[type="checkbox"]').checked
+        };
+        const pass = values.some(([placeholder, value]) => placeholder === "请输入职位" && value === "乙职位")
+          && values.some(([placeholder, value]) => placeholder === "请输入职位" && value === "甲职位")
+          && actual.firstChecked === false
+          && actual.secondChecked === true;
+        document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ actual, report })}`;
       } catch (error) {
         document.getElementById("test-result").textContent = `ERROR: ${error.stack || error.message}`;
       }

@@ -99,8 +99,13 @@
     education.slice(educationContainers.length).forEach((_item, index) => report.missing.push(`教育 ${educationContainers.length + index + 1} 尚未在网页添加`));
 
     const internshipContainers = recordContainers("internships");
-    internshipContainers.forEach((root, index) => {
-      const item = internships[index];
+    const internshipMatches = C.matchRecordsToRoots(
+      internships,
+      internshipContainers,
+      (root) => C.fieldsByPlaceholder("请输入实习公司", root)[0]?.value,
+      (record) => record.company
+    );
+    internshipMatches.matches.forEach(({ root, record: item, recordIndex: index }) => {
       if (!item) return;
       const prefix = `实习 ${index + 1}`;
       fillInRecord(root, "请输入实习公司", item.company, report, `${prefix} 公司`, overwrite);
@@ -111,11 +116,16 @@
       if (exactDate(item.endDate) && dates[1]) C.setValue(dates[1], item.endDate, overwrite);
       setCurrent(root, item.current, report, `${prefix} 至今`);
     });
-    internships.slice(internshipContainers.length).forEach((_item, index) => report.missing.push(`实习 ${internshipContainers.length + index + 1} 尚未在网页添加`));
+    internshipMatches.unmatchedRecordIndexes.forEach((index) => report.missing.push(`实习 ${index + 1} 尚未在网页添加或无法按公司匹配`));
 
     const projectContainers = recordContainers("projects");
-    projectContainers.forEach((root, index) => {
-      const item = projects[index];
+    const projectMatches = C.matchRecordsToRoots(
+      projects,
+      projectContainers,
+      (root) => C.fieldsByPlaceholder("请输入项目名称（含校园实践）", root)[0]?.value,
+      (record) => record.name
+    );
+    projectMatches.matches.forEach(({ root, record: item, recordIndex: index }) => {
       if (!item) return;
       const prefix = `项目 ${index + 1}`;
       fillInRecord(root, "请输入项目名称（含校园实践）", item.name, report, `${prefix} 名称`, overwrite);
@@ -126,7 +136,7 @@
       if (exactDate(item.endDate) && dates[1]) C.setValue(dates[1], item.endDate, overwrite);
       setCurrent(root, item.current, report, `${prefix} 至今`);
     });
-    projects.slice(projectContainers.length).forEach((_item, index) => report.missing.push(`项目 ${projectContainers.length + index + 1} 尚未在网页添加`));
+    projectMatches.unmatchedRecordIndexes.forEach((index) => report.missing.push(`项目 ${index + 1} 尚未在网页添加或无法按名称匹配`));
 
     const awardContainers = recordContainers("awards");
     awardContainers.forEach((root, index) => {

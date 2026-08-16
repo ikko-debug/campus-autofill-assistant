@@ -142,6 +142,51 @@
     return { adapter, filled: [], skipped: [], missing: [], warnings: [] };
   }
 
+  function matchRecordsToRoots(records, roots, getRootIdentity, getRecordIdentity) {
+    const remaining = new Set(records.map((_record, index) => index));
+    const matches = roots.map((root) => ({ root, record: null, recordIndex: -1 }));
+
+    // Preserve cards that already contain an identity by matching their company
+    // or project name first. This avoids coupling profile order to page order.
+    matches.forEach((match) => {
+      const current = normalize(getRootIdentity(match.root));
+      if (!current) return;
+      const candidates = [...remaining].filter((index) => {
+        const identity = normalize(getRecordIdentity(records[index]));
+        return identity && (identity === current || identity.includes(current) || current.includes(identity));
+      });
+      if (candidates.length !== 1) return;
+      match.recordIndex = candidates[0];
+      match.record = records[candidates[0]];
+      remaining.delete(candidates[0]);
+    });
+
+    // Only assign unmatched records to blank cards. Never overwrite an existing
+    // but unrecognised experience with an unrelated record.
+    matches.forEach((match) => {
+      if (match.record) return;
+      if (text(getRootIdentity(match.root))) return;
+      const recordIndex = remaining.values().next().value;
+      if (recordIndex === undefined) return;
+      match.recordIndex = recordIndex;
+      match.record = records[recordIndex];
+      remaining.delete(recordIndex);
+    });
+
+    return { matches, unmatchedRecordIndexes: [...remaining] };
+  }
+
+  function mergeReports(primary, supplement) {
+    const unique = (values) => [...new Set(values)];
+    return {
+      adapter: primary.adapter,
+      filled: unique([...primary.filled, ...supplement.filled]),
+      skipped: unique([...primary.skipped, ...supplement.skipped]),
+      missing: unique([...primary.missing, ...supplement.missing]),
+      warnings: unique([...primary.warnings, ...supplement.warnings])
+    };
+  }
+
   function showToast(message, tone = "info") {
     document.getElementById("campus-autofill-toast")?.remove();
     const toast = document.createElement("div");
@@ -171,6 +216,8 @@
     chooseFromInput,
     chooseByPlaceholder,
     createReport,
+    matchRecordsToRoots,
+    mergeReports,
     showToast,
     getProfile
   };

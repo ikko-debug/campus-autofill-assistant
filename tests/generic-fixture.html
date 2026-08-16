@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Generic experience fixture</title></head>
+<body>
+  <section class="experience-card" id="internship-b">
+    <label>公司名称<input value="乙公司"></label>
+    <label>职位<input></label>
+    <label>工作职责<textarea></textarea></label>
+  </section>
+  <section class="experience-card" id="internship-a">
+    <label>公司名称<input></label>
+    <label>职位<input></label>
+    <label>工作职责<textarea></textarea></label>
+  </section>
+  <section class="experience-card" id="project-b">
+    <label>项目名称<input value="项目乙"></label>
+    <label>项目角色<input></label>
+    <label>项目描述<textarea></textarea></label>
+  </section>
+  <section class="experience-card" id="project-a">
+    <label>项目名称<input></label>
+    <label>项目角色<input></label>
+    <label>项目描述<textarea></textarea></label>
+  </section>
+  <script src="../content/common.js"></script>
+  <script src="../content/generic.js"></script>
+  <pre id="test-result">pending</pre>
+  <script>
+    (async () => {
+      const profile = {
+        internships: [
+          { company: "甲公司", role: "甲职位", description: "甲职责" },
+          { company: "乙公司", role: "乙职位", description: "乙职责" }
+        ],
+        projects: [
+          { name: "项目甲", role: "甲角色", description: "甲描述" },
+          { name: "项目乙", role: "乙角色", description: "乙描述" }
+        ]
+      };
+      const report = await CampusAutofillGeneric.fill(profile, { overwrite: false });
+      const values = (id) => [...document.querySelectorAll(`#${id} input, #${id} textarea`)].map((field) => field.value);
+      const actual = {
+        internshipB: values("internship-b"),
+        internshipA: values("internship-a"),
+        projectB: values("project-b"),
+        projectA: values("project-a")
+      };
+      const expected = {
+        internshipB: ["乙公司", "乙职位", "乙职责"],
+        internshipA: ["甲公司", "甲职位", "甲职责"],
+        projectB: ["项目乙", "乙角色", "乙描述"],
+        projectA: ["项目甲", "甲角色", "甲描述"]
+      };
+      document.getElementById("test-result").textContent = JSON.stringify(actual) === JSON.stringify(expected)
+        ? `PASS ${JSON.stringify(report)}`
+        : `FAIL ${JSON.stringify({ actual, expected, report })}`;
+    })();
+  </script>
+</body>
+</html>

@@ -76,12 +76,71 @@
     fillSelector(educationSelector(1, "school"), record.school, report, "教育经历 学校", overwrite);
   }
 
+  function indexedControl(prefix, index, fields) {
+    for (const field of fields) {
+      const control = one(`[id="${prefix}[${index}].${field}"]`);
+      if (control) return control;
+    }
+    return null;
+  }
+
+  function indexedRoots(prefixes, identityFields) {
+    const roots = [];
+    prefixes.forEach((prefix) => {
+      document.querySelectorAll(`[id^="${prefix}["]`).forEach((control) => {
+        const match = control.id.match(new RegExp(`^${prefix}\\[(\\d+)\\]\\.(${identityFields.join("|")})$`));
+        if (match) roots.push({ prefix, index: Number(match[1]) });
+      });
+    });
+    return roots.sort((a, b) => a.index - b.index);
+  }
+
+  function fillIndexed(control, value, report, label, overwrite) {
+    if (!C.text(value) || !control) return false;
+    const result = C.setValue(control, value, overwrite);
+    if (result.ok) report.filled.push(label);
+    else report.skipped.push(`${label}：${result.reason}`);
+    return result.ok;
+  }
+
   function fillCareer(profile, report, overwrite) {
-    const record = profile.internships?.[0];
-    if (!record) return;
-    fillSelector('[id="career[1].company"]', record.company, report, "工作经历 公司", overwrite);
-    fillSelector('[id="career[1].title"]', record.role, report, "工作经历 职位", overwrite);
-    fillSelector('[id="career[1].desc"]', record.description, report, "工作经历 描述", overwrite);
+    const records = profile.internships || [];
+    const roots = indexedRoots(["career"], ["company", "companyName", "employer", "organization"]);
+    const matched = C.matchRecordsToRoots(
+      records,
+      roots,
+      (root) => indexedControl(root.prefix, root.index, ["company", "companyName", "employer", "organization"])?.value,
+      (record) => record.company
+    );
+    matched.matches.forEach(({ root, record, recordIndex }) => {
+      if (!record) return;
+      const prefix = `工作/实习经历 ${recordIndex + 1}`;
+      fillIndexed(indexedControl(root.prefix, root.index, ["company", "companyName", "employer", "organization"]), record.company, report, `${prefix} 公司`, overwrite);
+      fillIndexed(indexedControl(root.prefix, root.index, ["department"]), record.department, report, `${prefix} 部门`, overwrite);
+      fillIndexed(indexedControl(root.prefix, root.index, ["title", "position", "role"]), record.role, report, `${prefix} 职位`, overwrite);
+      fillIndexed(indexedControl(root.prefix, root.index, ["desc", "description", "responsibility"]), record.description, report, `${prefix} 描述`, overwrite);
+    });
+    matched.unmatchedRecordIndexes.forEach((index) => report.missing.push(`工作/实习经历 ${index + 1} 尚未在网页添加或无法按公司匹配`));
+  }
+
+  function fillProjects(profile, report, overwrite) {
+    const records = profile.projects || [];
+    const roots = indexedRoots(["project", "projects", "projectExperience"], ["name", "projectName", "title"]);
+    const matched = C.matchRecordsToRoots(
+      records,
+      roots,
+      (root) => indexedControl(root.prefix, root.index, ["name", "projectName", "title"])?.value,
+      (record) => record.name
+    );
+    matched.matches.forEach(({ root, record, recordIndex }) => {
+      if (!record) return;
+      const prefix = `项目经历 ${recordIndex + 1}`;
+      fillIndexed(indexedControl(root.prefix, root.index, ["name", "projectName", "title"]), record.name, report, `${prefix} 名称`, overwrite);
+      fillIndexed(indexedControl(root.prefix, root.index, ["role", "position"]), record.role, report, `${prefix} 角色`, overwrite);
+      fillIndexed(indexedControl(root.prefix, root.index, ["achievement", "result"]), record.achievement, report, `${prefix} 成果`, overwrite);
+      fillIndexed(indexedControl(root.prefix, root.index, ["desc", "description"]), record.description, report, `${prefix} 描述`, overwrite);
+    });
+    matched.unmatchedRecordIndexes.forEach((index) => report.missing.push(`项目经历 ${index + 1} 尚未在网页添加或无法按名称匹配`));
   }
 
   function analyze() {
@@ -89,7 +148,7 @@
       adapter: "飞书 ATS",
       supported: detect(),
       fields: document.querySelectorAll("input, textarea, [role=combobox]").length,
-      note: "支持飞书 ATS 基础信息、教育经历和当前已展开的工作经历；动态区块和附件保留手工确认。"
+      note: "支持飞书 ATS 基础信息、教育经历，以及当前已展开的工作/实习与项目经历。"
     };
   }
 
@@ -103,6 +162,7 @@
     await choose('[id="education[1].degree"]', profile.education?.[0]?.degree === "硕士研究生" ? "硕士" : profile.education?.[0]?.degree, report, "教育经历 学历", overwrite);
     fillEducation(profile, report, overwrite);
     fillCareer(profile, report, overwrite);
+    fillProjects(profile, report, overwrite);
     report.warnings.push("手机号由招聘平台账号带入；意向城市、教育/工作起止月份、附件、动态新增区块和最终提交仍保留手工确认。");
     return report;
   }
