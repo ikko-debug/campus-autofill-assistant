@@ -8,7 +8,8 @@
     "https://app.mokahr.com/*",
     "https://join.qq.com/*",
     "https://*.zhiye.com/*",
-    "https://*.feishu.cn/*"
+    "https://*.feishu.cn/*",
+    "https://campus.hundsun.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -24,7 +25,8 @@
         "https://app.mokahr.com/*",
         "https://join.qq.com/*",
         "https://*.zhiye.com/*",
-        "https://*.feishu.cn/*"
+        "https://*.feishu.cn/*",
+        "https://campus.hundsun.com/*"
       ],
       "js": [
         "content/common.js",

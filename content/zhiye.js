@@ -3,7 +3,8 @@
   const C = globalThis.CampusAutofill;
 
   function detect() {
-    return location.hostname.endsWith(".zhiye.com") || location.hostname === "zhiye.com";
+    return location.hostname.endsWith(".zhiye.com") || location.hostname === "zhiye.com" ||
+      location.hostname === "campus.hundsun.com";
   }
 
   function labelOf(item) {
@@ -19,6 +20,10 @@
     return items(root).find((candidate) => labelOf(candidate) === wanted) || null;
   }
 
+  function itemAny(labels, root = document) {
+    return (Array.isArray(labels) ? labels : [labels]).map((label) => item(label, root)).find(Boolean) || null;
+  }
+
   function textControl(label, root = document) {
     const current = item(label, root);
     if (!current) return null;
@@ -27,8 +32,19 @@
     );
   }
 
+  function textControlAny(labels, root = document) {
+    const current = itemAny(labels, root);
+    return current?.querySelector(
+      'input.phoenix-input__input:not([type="file"]), textarea.phoenix-textarea__realTextarea, input:not([type="file"]), textarea'
+    ) || null;
+  }
+
   function selectControl(label, root = document) {
     return item(label, root)?.querySelector(".phoenix-select__input");
+  }
+
+  function selectControlAny(labels, root = document) {
+    return itemAny(labels, root)?.querySelector(".phoenix-select__input") || null;
   }
 
   function visible(element) {
@@ -87,6 +103,13 @@
     return true;
   }
 
+  async function chooseAny(labels, value, report, options = {}) {
+    for (const label of (Array.isArray(labels) ? labels : [labels])) {
+      if (await choose(label, value, report, options)) return true;
+    }
+    return false;
+  }
+
   async function chooseOneOf(labels, value, report, options = {}) {
     for (const candidate of labels) {
       if (await choose(candidate, value, report, { ...options, label: options.label || candidate })) return true;
@@ -104,6 +127,20 @@
     const result = C.setValue(control, value, options.overwrite);
     if (result.ok) report.filled.push(options.label || label);
     else report.skipped.push(`${options.label || label}：${result.reason}`);
+    return result.ok;
+  }
+
+  function fillTextAny(labels, value, report, options = {}) {
+    if (!C.text(value)) return false;
+    const control = textControlAny(labels, options.root);
+    const displayLabel = options.label || (Array.isArray(labels) ? labels[0] : labels);
+    if (!control) {
+      report.missing.push(displayLabel);
+      return false;
+    }
+    const result = C.setValue(control, value, options.overwrite);
+    if (result.ok) report.filled.push(displayLabel);
+    else report.skipped.push(`${displayLabel}：${result.reason}`);
     return result.ok;
   }
 
@@ -149,20 +186,26 @@
     return [...document.querySelectorAll(".form-part-body")].filter((root) => item(label, root));
   }
 
+  function recordRootsAny(labels) {
+    return [...document.querySelectorAll(".form-part-body")].filter((root) => itemAny(labels, root));
+  }
+
   async function ensureRecordCount(label, buttonText, wanted, report) {
-    if (!wanted) return recordRoots(label);
-    let roots = recordRoots(label);
+    const labels = Array.isArray(label) ? label : [label];
+    const buttons = Array.isArray(buttonText) ? buttonText : [buttonText];
+    if (!wanted) return recordRootsAny(labels);
+    let roots = recordRootsAny(labels);
     while (roots.length < wanted) {
       const button = [...document.querySelectorAll("button, a, div, span")]
         .filter(visible)
-        .find((candidate) => C.normalize(candidate.textContent) === C.normalize(buttonText));
+        .find((candidate) => buttons.some((text) => C.normalize(candidate.textContent) === C.normalize(text)));
       if (!button) {
-        report.missing.push(`${buttonText}（网页未找到添加按钮）`);
+        report.missing.push(`${buttons[0]}（网页未找到添加按钮）`);
         break;
       }
       button.click();
       await C.delay(180);
-      const nextRoots = recordRoots(label);
+      const nextRoots = recordRootsAny(labels);
       if (nextRoots.length <= roots.length) break;
       roots = nextRoots;
     }
@@ -171,7 +214,7 @@
 
   async function fillEducation(profile, report, options) {
     const records = profile.education || [];
-    const roots = await ensureRecordCount("毕业学校", "添加教育经历", records.length, report);
+    const roots = await ensureRecordCount(["毕业学校", "学校名称"], "添加教育经历", records.length, report);
     for (const [index, root] of roots.entries()) {
       const record = records[index];
       if (!record) continue;
@@ -179,8 +222,8 @@
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
       await chooseOneOf(["学历"], record.degree, report, { root, label: `${prefix} 学历`, overwrite: options.overwrite });
-      fillText("毕业学校", record.school, report, { root, label: `${prefix} 学校`, overwrite: options.overwrite });
-      fillText("专业", record.major, report, { root, label: `${prefix} 专业`, overwrite: options.overwrite });
+      fillTextAny(["毕业学校", "学校名称"], record.school, report, { root, label: `${prefix} 学校`, overwrite: options.overwrite });
+      fillTextAny(["专业", "专业名称"], record.major, report, { root, label: `${prefix} 专业`, overwrite: options.overwrite });
       const degree = C.normalize(record.degree) === "硕士研究生" ? "硕士" : record.degree;
       await choose("学位", degree, report, { root, label: `${prefix} 学位`, overwrite: options.overwrite });
     }
@@ -189,17 +232,17 @@
 
   async function fillInternships(profile, report, options) {
     const records = profile.internships || [];
-    const roots = await ensureRecordCount("公司名称", "添加工作/实习经历", records.length, report);
-    const dutyRoots = recordRoots("工作职责");
+    const roots = await ensureRecordCount(["公司名称", "单位名称"], ["添加工作/实习经历", "添加实习经历"], records.length, report);
+    const dutyRoots = recordRootsAny(["工作职责", "实习内容"]);
     roots.forEach((root, index) => {
       const record = records[index];
       if (!record) return;
       const prefix = `实习 ${index + 1}`;
-      fillText("公司名称", record.company, report, { root, label: `${prefix} 公司`, overwrite: options.overwrite });
-      fillText("职位名称", record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
+      fillTextAny(["公司名称", "单位名称"], record.company, report, { root, label: `${prefix} 公司`, overwrite: options.overwrite });
+      fillTextAny(["职位名称", "职位", "职务"], record.role, report, { root, label: `${prefix} 职位`, overwrite: options.overwrite });
       fillDate("开始时间", record.startDate, report, { root, label: `${prefix} 开始时间`, overwrite: options.overwrite });
       fillDate("结束时间", record.endDate, report, { root, label: `${prefix} 结束时间`, overwrite: options.overwrite });
-      fillText("工作职责", recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root: dutyRoots[index] || root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
+      fillTextAny(["工作职责", "实习内容"], recordValue(record, ["description", "workDescription", "jobDescription", "responsibility", "duties", "workContent", "desc"]), report, { root: dutyRoots[index] || root, label: `${prefix} 工作职责`, overwrite: options.overwrite });
       if (record.current) {
         const checkbox = [...root.querySelectorAll('input[type="checkbox"]')][0];
         if (checkbox && !checkbox.checked) {
@@ -269,10 +312,10 @@
     fillText("姓名", p.name, report, { label: "姓名", overwrite });
     fillRadio("性别", p.gender, report, { label: "性别", overwrite });
     fillText("健康状况", p.health, report, { label: "健康状况", overwrite });
-    fillText("身份证号", p.idNumber, report, { label: "身份证号", overwrite });
-    fillText("手机号", p.phone, report, { label: "手机号", overwrite });
+    fillTextAny(["身份证号", "证件号码"], p.idNumber, report, { label: "身份证号", overwrite });
+    fillTextAny(["手机号", "手机号码"], p.phone, report, { label: "手机号", overwrite });
     fillText("邮箱", p.email, report, { label: "邮箱", overwrite });
-    fillText("期望薪酬", intent.expectedSalary, report, { label: "期望薪酬", overwrite });
+    fillTextAny(["期望薪酬", "期望薪资"], intent.expectedSalary, report, { label: "期望薪酬", overwrite });
     fillText("您的意向工作地排序", (intent.desiredCities || []).join("、"), report, { label: "意向工作地", overwrite });
     fillText("兴趣爱好", profile.additional?.hobbies, report, { label: "兴趣爱好", overwrite });
     fillText("专利成果", profile.additional?.patents, report, { label: "专利成果", overwrite });
