@@ -1,17 +1,9 @@
 {
   "manifest_version": 3,
   "name": "秋招本地填表助手",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "纯本地保存个人资料，辅助填写常见招聘表单，并匹配实习、工作与项目经历，不自动提交。",
-  "permissions": ["storage", "activeTab"],
-  "host_permissions": [
-    "https://app.mokahr.com/*",
-    "https://join.qq.com/*",
-    "https://*.zhiye.com/*",
-    "https://*.feishu.cn/*",
-    "https://campus.hundsun.com/*",
-    "https://we.zyt.com/*"
-  ],
+  "permissions": ["storage", "activeTab", "scripting"],
   "background": {
     "service_worker": "background.js"
   },
@@ -19,23 +11,5 @@
     "default_title": "秋招本地填表助手",
     "default_popup": "popup.html"
   },
-  "options_page": "options.html",
-  "content_scripts": [
-    {
-      "matches": [
-        "https://*/*"
-      ],
-      "js": [
-        "content/common.js",
-        "content/moka.js",
-        "content/tencent.js",
-        "content/zhiye.js",
-        "content/feishu.js",
-        "content/generic.js",
-        "content/index.js"
-      ],
-      "css": ["content/toast.css"],
-      "run_at": "document_idle"
-    }
-  ]
+  "options_page": "options.html"
 }

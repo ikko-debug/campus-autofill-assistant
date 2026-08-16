@@ -1,5 +1,6 @@
 const PROFILE_KEY = "campusAutofillProfile";
 let profile;
+let defaultProfile;
 
 const recordSchemas = {
   education: [
@@ -16,7 +17,12 @@ const recordSchemas = {
     ["name", "项目名称"], ["role", "项目角色"], ["startDate", "开始时间"],
     ["endDate", "结束时间"], ["current", "至今", "checkbox"], ["achievement", "项目成果", "textarea"], ["description", "项目描述", "textarea"]
   ],
-  awards: [["type", "获奖类型"], ["name", "奖项名称"], ["year", "年份"], ["description", "说明"]]
+  awards: [["type", "获奖类型"], ["name", "奖项名称"], ["year", "年份"], ["description", "说明"]],
+  languages: [["name", "语言"], ["level", "熟练程度"], ["certificate", "证书 / 等级"]]
+};
+
+const recordLabels = {
+  education: "教育", internships: "实习", projects: "项目", awards: "获奖", languages: "语言"
 };
 
 function getPath(object, path) {
@@ -41,7 +47,7 @@ function renderRecords(type) {
   const records = profile[type] || [];
   container.innerHTML = records.map((record, index) => `
     <article class="record-card" data-record-type="${type}" data-record-index="${index}">
-      <div class="record-title"><strong>${type === "education" ? "教育" : type === "internships" ? "实习" : type === "projects" ? "项目" : "获奖"} ${index + 1}</strong><button class="danger-link" data-remove="${type}" data-index="${index}">删除</button></div>
+      <div class="record-title"><strong>${recordLabels[type]} ${index + 1}</strong><button class="danger-link" data-remove="${type}" data-index="${index}">删除</button></div>
       <div class="form-grid">
         ${recordSchemas[type].map(([key, label, kind]) => `
           <label class="${kind === "textarea" ? "span-two" : ""}">${label}
@@ -83,9 +89,11 @@ function collect() {
 }
 
 async function load() {
+  defaultProfile = await (await fetch(chrome.runtime.getURL("data/default-profile.json"))).json();
   const stored = await chrome.storage.local.get(PROFILE_KEY);
-  if (stored[PROFILE_KEY]) profile = stored[PROFILE_KEY];
-  else profile = await (await fetch(chrome.runtime.getURL("data/default-profile.json"))).json();
+  profile = stored[PROFILE_KEY]
+    ? CampusAutofillProfile.normalize(stored[PROFILE_KEY], defaultProfile)
+    : structuredClone(defaultProfile);
   render();
 }
 
@@ -93,6 +101,7 @@ async function save() {
   collect();
   await chrome.storage.local.set({ [PROFILE_KEY]: profile });
   const status = document.getElementById("save-status");
+  delete status.dataset.tone;
   status.textContent = `已保存到本机：${new Date().toLocaleTimeString("zh-CN")}`;
   setTimeout(() => { status.textContent = ""; }, 3000);
 }
@@ -126,9 +135,22 @@ document.getElementById("export").addEventListener("click", () => {
 document.getElementById("import").addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
-  profile = JSON.parse(await file.text());
-  render();
-  await save();
+  const status = document.getElementById("save-status");
+  try {
+    const imported = JSON.parse(await file.text());
+    profile = CampusAutofillProfile.normalize(imported, defaultProfile);
+    render();
+    await save();
+  } catch (error) {
+    status.textContent = `导入失败：${error.message}`;
+    status.dataset.tone = "error";
+  } finally {
+    event.target.value = "";
+  }
 });
 
-load();
+load().catch((error) => {
+  const status = document.getElementById("save-status");
+  status.textContent = `资料加载失败：${error.message}`;
+  status.dataset.tone = "error";
+});

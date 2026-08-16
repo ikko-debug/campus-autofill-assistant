@@ -37,12 +37,31 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : "";
   }
 
-  function setCurrent(root, current, report, label) {
-    if (!current) return;
+  function fillDateControl(control, value, report, label, overwrite) {
+    if (!value) return;
+    const next = exactDate(value);
+    if (!next) {
+      report.warnings.push(`${label} 不是 YYYY-MM-DD，已留给手工确认`);
+      return;
+    }
+    if (!control) {
+      report.missing.push(label);
+      return;
+    }
+    const result = C.setValue(control, next, overwrite);
+    if (result.ok) report.filled.push(label);
+    else report.skipped.push(`${label}：${result.reason}`);
+  }
+
+  function setCurrent(root, current, report, label, overwrite) {
     const checkbox = [...root.querySelectorAll('input[type="checkbox"]')].find((input) =>
       (input.closest("label")?.innerText || input.parentElement?.parentElement?.innerText || "").includes("至今")
     );
-    if (!checkbox || checkbox.checked) return;
+    if (!checkbox || checkbox.checked === Boolean(current)) return;
+    if (!overwrite && checkbox.checked) {
+      report.skipped.push(`${label}：网页已有内容`);
+      return;
+    }
     checkbox.closest("label")?.click();
     report.filled.push(label);
   }
@@ -93,8 +112,8 @@
       fillInRecord(root, "请输入研究方向", item.research, report, `${prefix} 研究方向`, overwrite);
       fillInRecord(root, "请输入已发表论文，如未发表则无需填写", item.paper, report, `${prefix} 论文`, overwrite);
       const dates = C.fieldsByPlaceholder("选择日期", root);
-      if (exactDate(item.startDate) && dates[0]) C.setValue(dates[0], item.startDate, overwrite);
-      if (exactDate(item.endDate) && dates[1]) C.setValue(dates[1], item.endDate, overwrite);
+      fillDateControl(dates[0], item.startDate, report, `${prefix} 开始时间`, overwrite);
+      fillDateControl(dates[1], item.endDate, report, `${prefix} 结束时间`, overwrite);
     });
     education.slice(educationContainers.length).forEach((_item, index) => report.missing.push(`教育 ${educationContainers.length + index + 1} 尚未在网页添加`));
 
@@ -112,9 +131,9 @@
       fillInRecord(root, "请输入职位", item.role, report, `${prefix} 职位`, overwrite);
       fillInRecord(root, "请输入描述内容", item.description, report, `${prefix} 描述`, overwrite);
       const dates = C.fieldsByPlaceholder("选择日期", root);
-      if (exactDate(item.startDate) && dates[0]) C.setValue(dates[0], item.startDate, overwrite);
-      if (exactDate(item.endDate) && dates[1]) C.setValue(dates[1], item.endDate, overwrite);
-      setCurrent(root, item.current, report, `${prefix} 至今`);
+      fillDateControl(dates[0], item.startDate, report, `${prefix} 开始时间`, overwrite);
+      fillDateControl(dates[1], item.endDate, report, `${prefix} 结束时间`, overwrite);
+      setCurrent(root, item.current, report, `${prefix} 至今`, overwrite);
     });
     internshipMatches.unmatchedRecordIndexes.forEach((index) => report.missing.push(`实习 ${index + 1} 尚未在网页添加或无法按公司匹配`));
 
@@ -132,9 +151,9 @@
       fillInRecord(root, "请输入在项目中担任的角色", item.role, report, `${prefix} 角色`, overwrite);
       fillInRecord(root, "请输入描述内容", item.description, report, `${prefix} 描述`, overwrite);
       const dates = C.fieldsByPlaceholder("选择日期", root);
-      if (exactDate(item.startDate) && dates[0]) C.setValue(dates[0], item.startDate, overwrite);
-      if (exactDate(item.endDate) && dates[1]) C.setValue(dates[1], item.endDate, overwrite);
-      setCurrent(root, item.current, report, `${prefix} 至今`);
+      fillDateControl(dates[0], item.startDate, report, `${prefix} 开始时间`, overwrite);
+      fillDateControl(dates[1], item.endDate, report, `${prefix} 结束时间`, overwrite);
+      setCurrent(root, item.current, report, `${prefix} 至今`, overwrite);
     });
     projectMatches.unmatchedRecordIndexes.forEach((index) => report.missing.push(`项目 ${index + 1} 尚未在网页添加或无法按名称匹配`));
 

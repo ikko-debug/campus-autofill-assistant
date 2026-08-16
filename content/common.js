@@ -5,6 +5,12 @@
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const text = (value) => String(value ?? "").trim();
   const normalize = (value) => text(value).replace(/\s+/g, " ").toLowerCase();
+  function hasMeaningfulSelection(value) {
+    const current = normalize(value).replace(/[：:…\.\s]/g, "");
+    if (!current) return false;
+    if (current.includes("请选择") || current.includes("请输入")) return false;
+    return !/^(?:选择|select|choose|pleaseselect)/i.test(current);
+  }
 
   function isVisible(element) {
     if (!element) return false;
@@ -102,8 +108,10 @@
 
   async function chooseFromInput(input, value, report, label, options = {}) {
     if (!input || !text(value)) return false;
-    if (!options.overwrite && normalize(input.value) === normalize(value)) {
-      report.skipped.push(`${label}：网页已有相同内容`);
+    const container = input.closest('[role="combobox"], .el-select, .phoenix-select, .atsx-select, [class*="Select"]');
+    const current = text(input.value) || text(container?.textContent);
+    if (!options.overwrite && hasMeaningfulSelection(current)) {
+      report.skipped.push(`${label}：网页已有内容`);
       return true;
     }
 
@@ -208,6 +216,7 @@
     delay,
     text,
     normalize,
+    hasMeaningfulSelection,
     isVisible,
     setValue,
     fieldsByPlaceholder,

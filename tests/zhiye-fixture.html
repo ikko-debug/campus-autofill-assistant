@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Beisen safe add fixture</title></head>
+<body>
+  <div class="phoenix-input"></div>
+  <div id="unsafe-add">添加教育经历</div>
+  <button id="safe-add">添加教育经历</button>
+  <div id="records">
+    <section class="form-part-body">
+      <div class="form-item"><span class="form-item__text">学校名称</span><input class="phoenix-input__input"></div>
+    </section>
+  </div>
+  <script src="../content/common.js"></script>
+  <script src="../content/zhiye.js"></script>
+  <pre id="test-result">pending</pre>
+  <script>
+    (async () => {
+      let unsafeClicks = 0;
+      let safeClicks = 0;
+      document.getElementById("unsafe-add").addEventListener("click", () => { unsafeClicks += 1; });
+      document.getElementById("safe-add").addEventListener("click", () => {
+        safeClicks += 1;
+        const section = document.querySelector(".form-part-body").cloneNode(true);
+        section.querySelector("input").value = "";
+        document.getElementById("records").appendChild(section);
+      });
+      const profile = {
+        personal: {}, intent: {}, contacts: {}, internships: [], projects: [], awards: [], languages: [], additional: {},
+        education: [{ school: "甲大学" }, { school: "乙大学" }]
+      };
+      const report = await CampusAutofillZhiye.fill(profile, { overwrite: false });
+      const schools = [...document.querySelectorAll(".form-part-body input")].map((input) => input.value);
+      const pass = unsafeClicks === 0 && safeClicks === 1 && schools.join(",") === "甲大学,乙大学";
+      document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ unsafeClicks, safeClicks, schools, report })}`;
+    })();
+  </script>
+</body>
+</html>

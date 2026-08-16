@@ -12,6 +12,10 @@
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === "CAMPUS_AUTOFILL_PING") {
+      sendResponse({ ready: true });
+      return false;
+    }
     const current = adapter();
     if (message?.type === "CAMPUS_AUTOFILL_ANALYZE") {
       sendResponse(current ? current.analyze() : { supported: false, adapter: "未知网站", fields: 0 });
@@ -25,7 +29,7 @@
         if (!profile) throw new Error("尚未配置本地资料");
         let report = await current.fill(profile, { overwrite: Boolean(message.overwrite) });
         if (current !== globalThis.CampusAutofillGeneric && globalThis.CampusAutofillGeneric?.detect()) {
-          const supplement = await globalThis.CampusAutofillGeneric.fillExperiences(profile, { overwrite: false });
+          const supplement = await globalThis.CampusAutofillGeneric.fillExperiences(profile, { overwrite: Boolean(message.overwrite) });
           if (supplement.filled.length) report = C.mergeReports(report, supplement);
         }
         C.showToast(`已填写 ${report.filled.length} 项，待确认 ${report.missing.length} 项`, report.filled.length ? "success" : "info");

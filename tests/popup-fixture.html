@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Popup injection fixture</title></head>
+<body>
+  <p id="site-status"></p>
+  <div id="page-summary" hidden></div>
+  <div id="result" hidden></div>
+  <input id="overwrite" type="checkbox">
+  <button id="fill" disabled>填写当前页面</button>
+  <button id="open-options">编辑本地资料</button>
+  <pre id="test-result">pending</pre>
+  <script>
+    let injected = false;
+    let injectedFiles = [];
+    let fillMessage = null;
+    globalThis.chrome = {
+      storage: { local: { get: async () => ({ campusAutofillProfile: { settings: { fillOnlyEmpty: false } } }) } },
+      tabs: {
+        query: async () => [{ id: 7 }],
+        sendMessage: async (_tabId, message) => {
+          if (message.type === "CAMPUS_AUTOFILL_PING") {
+            if (!injected) throw new Error("Receiving end does not exist");
+            return { ready: true };
+          }
+          if (message.type === "CAMPUS_AUTOFILL_ANALYZE") {
+            return { supported: true, adapter: "测试适配器", fields: 3, note: "已就绪" };
+          }
+          if (message.type === "CAMPUS_AUTOFILL_FILL") {
+            fillMessage = message;
+            return { ok: true, report: { filled: ["姓名"], skipped: [], missing: [], warnings: [] } };
+          }
+        }
+      },
+      scripting: {
+        insertCSS: async () => {},
+        executeScript: async ({ files }) => { injected = true; injectedFiles = files; }
+      },
+      runtime: { openOptionsPage: () => {} }
+    };
+  </script>
+  <script src="../popup.js"></script>
+  <script>
+    setTimeout(async () => {
+      document.getElementById("fill").click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      const pass = injected
+        && injectedFiles.includes("content/index.js")
+        && document.getElementById("overwrite").checked
+        && fillMessage?.overwrite === true
+        && document.querySelector("#result details summary")?.textContent.includes("已填写明细")
+        && document.getElementById("site-status").textContent.includes("测试适配器");
+      document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ injected, injectedFiles, fillMessage })}`;
+    }, 30);
+  </script>
+</body>
+</html>

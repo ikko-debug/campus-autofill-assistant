@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Profile validation fixture</title></head>
+<body>
+  <script src="../profile.js"></script>
+  <pre id="test-result">pending</pre>
+  <script>
+    (() => {
+      const defaults = {
+        schemaVersion: 1,
+        personal: { name: "", email: "" },
+        intent: { desiredCities: [] },
+        education: [],
+        settings: { fillOnlyEmpty: true, allowCustomDropdowns: true }
+      };
+      const migrated = CampusAutofillProfile.normalize({
+        personal: { name: "测试用户" },
+        intent: { desiredCities: ["上海"] },
+        education: [{ school: "测试大学" }],
+        settings: { fillOnlyEmpty: false }
+      }, defaults);
+      let invalidRejected = false;
+      try {
+        CampusAutofillProfile.normalize({
+          intent: { desiredCities: "上海" }
+        }, defaults);
+      } catch (_error) {
+        invalidRejected = true;
+      }
+      const pass = migrated.schemaVersion === 1
+        && migrated.personal.name === "测试用户"
+        && migrated.personal.email === ""
+        && migrated.settings.fillOnlyEmpty === false
+        && migrated.settings.allowCustomDropdowns === true
+        && invalidRejected;
+      document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ migrated, invalidRejected })}`;
+    })();
+  </script>
+</body>
+</html>

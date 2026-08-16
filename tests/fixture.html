@@ -31,6 +31,7 @@
   <script>
     (async () => {
       try {
+        document.querySelector('#internship-b input[type="checkbox"]').checked = true;
         const profile = {
           personal: { name: "测试姓名", phone: "13800000000" },
           intent: {}, contacts: {}, education: [], projects: [], awards: [], additional: {},
@@ -41,18 +42,22 @@
           settings: { allowCustomDropdowns: false }
         };
         const report = await CampusAutofillTencent.fill(profile, { overwrite: false });
+        const preservedExistingCurrent = document.querySelector('#internship-b input[type="checkbox"]').checked;
+        const overwriteReport = await CampusAutofillTencent.fill(profile, { overwrite: true });
         const values = [...document.querySelectorAll("input[placeholder],textarea[placeholder]")]
           .map((element) => [element.placeholder, element.value]);
         const actual = {
           values,
           firstChecked: document.querySelector('#internship-b input[type="checkbox"]').checked,
-          secondChecked: document.querySelector('#internship-a input[type="checkbox"]').checked
+          secondChecked: document.querySelector('#internship-a input[type="checkbox"]').checked,
+          preservedExistingCurrent
         };
         const pass = values.some(([placeholder, value]) => placeholder === "请输入职位" && value === "乙职位")
           && values.some(([placeholder, value]) => placeholder === "请输入职位" && value === "甲职位")
+          && actual.preservedExistingCurrent === true
           && actual.firstChecked === false
           && actual.secondChecked === true;
-        document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ actual, report })}`;
+        document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ actual, report, overwriteReport })}`;
       } catch (error) {
         document.getElementById("test-result").textContent = `ERROR: ${error.stack || error.message}`;
       }

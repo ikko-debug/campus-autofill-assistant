@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>Options fields fixture</title></head>
+<body>
+  <input id="target-role" data-path="intent.targetRole">
+  <input data-path="skills.programming" data-array="true">
+  <input data-path="additional.portfolioLink">
+  <div id="education-list"></div>
+  <div id="internships-list"></div>
+  <div id="projects-list"></div>
+  <div id="awards-list"></div>
+  <div id="languages-list"></div>
+  <button id="save">保存</button>
+  <button id="export">导出</button>
+  <input id="import" type="file">
+  <div id="save-status"></div>
+  <pre id="test-result">pending</pre>
+  <script>
+    const defaults = {
+      schemaVersion: 1,
+      personal: {},
+      intent: { targetRole: "", desiredCities: [], interviewCity: "", expectedSalary: "", acceptOtherCities: "", businessGroup: "" },
+      contacts: {}, education: [], internships: [], projects: [], awards: [],
+      skills: { programming: [], tools: [], summary: "" }, languages: [],
+      additional: { aiTools: "", aiProject: "", portfolioLink: "", hobbies: "", patents: "", selfIntroduction: "" },
+      settings: { fillOnlyEmpty: true, allowCustomDropdowns: true }
+    };
+    let savedProfile = null;
+    globalThis.fetch = async () => ({ json: async () => structuredClone(defaults) });
+    globalThis.chrome = {
+      runtime: { getURL: () => "default-profile.json" },
+      storage: { local: {
+        get: async () => ({ campusAutofillProfile: {
+          intent: { targetRole: "后端开发" },
+          skills: { programming: ["JavaScript", "Python"] },
+          languages: [{ name: "英语", level: "熟练", certificate: "CET-6" }],
+          additional: { portfolioLink: "https://example.com" }
+        } }),
+        set: async (value) => { savedProfile = value.campusAutofillProfile; }
+      } }
+    };
+  </script>
+  <script src="../profile.js"></script>
+  <script src="../options.js"></script>
+  <script>
+    setTimeout(async () => {
+      const target = document.getElementById("target-role");
+      const language = document.querySelector('#languages-list [data-record-key="certificate"]');
+      target.value = "AI 工程师";
+      document.getElementById("save").click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      const pass = language?.value === "CET-6"
+        && savedProfile?.intent.targetRole === "AI 工程师"
+        && savedProfile?.skills.programming.join(",") === "JavaScript,Python"
+        && savedProfile?.additional.portfolioLink === "https://example.com";
+      document.getElementById("test-result").textContent = `${pass ? "PASS" : "FAIL"} ${JSON.stringify({ savedProfile })}`;
+    }, 30);
+  </script>
+</body>
+</html>
